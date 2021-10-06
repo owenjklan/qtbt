@@ -9,6 +9,7 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Qt5 COMPONENTS
         Core
+        Bluetooth
         Gui
         Widgets
         REQUIRED)
@@ -16,6 +17,7 @@ find_package(Qt5 COMPONENTS
 add_executable(qtbt main.cpp qtbt.hpp qtbt.cpp)
 target_link_libraries(qtbt
         Qt5::Core
+        Qt5::Bluetooth
         Qt5::Gui
         Qt5::Widgets
         )
