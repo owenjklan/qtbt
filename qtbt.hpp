@@ -29,6 +29,7 @@ public:
 
 private slots:
     void setupUiAndSignals(QWidget *parent);
+    void setupBluetooth();
     void onScanButtonReleased();
     void onAbortButtonReleased();
     void onDeviceListDoubleClick(QListWidgetItem *);
@@ -37,6 +38,7 @@ private slots:
     void serviceDiscovered(const QBluetoothServiceInfo svc);
 
 private:
+    QBluetoothLocalDevice *localBTDevice;
     QBluetoothDeviceDiscoveryAgent *discoveryAgent;
     QBluetoothServiceDiscoveryAgent *serviceAgent;
     QPushButton *scanButton;

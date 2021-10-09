@@ -10,15 +10,49 @@ QTBT::QTBT(QWidget *parent) :
     QWidget(parent)
 {
     setupUiAndSignals(parent);
+
+    // The necessary BlueTooth boiler plate and objects...
+    setupBluetooth();
 }
 
 // Destructor
 QTBT::~QTBT()
 {
+    // TODO: You need to actually think about all the things you used 'new'
+    // for and clean ship up properly. Ie: Run valgrind already, would you?
     delete clearButton;
     delete scanButton;
     delete domainInput;
     delete textOutput;
+    delete localBTDevice;
+}
+
+void QTBT::setupBluetooth() {
+    // NOTE: We're assuming that the UI components have been set up already,
+    // so that we can use them for output or error dialogs, if needed.
+    localBTDevice = new QBluetoothLocalDevice();
+    QString localDeviceName;
+
+// Check if Bluetooth is available on this device
+    if (!localBTDevice->isValid()) {
+        QMessageBox::warning(this, tr("Local Bluetooth Issue"),
+                             "No valid local Bluetooth device was found!");
+        return;
+    }
+    // Read local device name
+    localDeviceName = localBTDevice->name();
+    textOutput->append("Local Bluetooth device: " + localDeviceName);
+
+    // Turn Bluetooth on
+    textOutput->append("Powering on Bluetooth...");
+    localBTDevice->powerOn();
+
+    // Make it visible to others
+    localBTDevice->setHostMode(QBluetoothLocalDevice::HostDiscoverable);
+
+    // Get connected devices
+    QList<QBluetoothAddress> remotes;
+    remotes = localBTDevice->connectedDevices();
 }
 
 void QTBT::setupUiAndSignals(QWidget *parent) {
@@ -67,7 +101,6 @@ void QTBT::setupUiAndSignals(QWidget *parent) {
     setLayout(mainLayout);
     setWindowTitle(tr("Qt Bluetooth Experiments"));
 
-
     // connections
     connect(scanButton, SIGNAL(released()), this, SLOT(onScanButtonReleased()));
     connect(abortButton, SIGNAL(released()), this, SLOT(onAbortButtonReleased()));
@@ -77,11 +110,6 @@ void QTBT::setupUiAndSignals(QWidget *parent) {
     connect(discoveryAgent, SIGNAL(finished()),
             this, SLOT(scanFinished()));
 }
-
-// In your local slot, read information about the found devices
-//void QTBT::deviceDiscovered(const QBluetoothDeviceInfo &device) {
-//    qDebug() << "Found new device:" << device.name() << '(' << device.address().toString() << ')';
-//}
 
 void QTBT::scanFinished() {
     textOutput->append("Scan finished.");
@@ -95,6 +123,10 @@ void QTBT::scanFinished() {
     }
     scanButton->setEnabled(true);
     abortButton->setDisabled(true);
+
+    //
+    textOutput->append(tr("Beginning service discovery..."));
+    getServicesFromDevice(localBTDevice->address());
 }
 
 void QTBT::serviceDiscoveryFinished() {
@@ -117,12 +149,22 @@ void QTBT::onAbortButtonReleased() {
 
 void QTBT::onDeviceListDoubleClick(QListWidgetItem *item) {
     textOutput->append(item->text());
-    QBluetoothAddress targetAddr = QBluetoothAddress("49:42:08:00:1b:02");
-    getServicesFromDevice(targetAddr);
+//    QBluetoothAddress targetAddr = QBluetoothAddress("49:42:08:00:1b:02");
+//    getServicesFromDevice(targetAddr);
 }
 
 void QTBT::serviceDiscovered(const QBluetoothServiceInfo svc) {
-    textOutput->append("Service Discovered");
+    textOutput->append("Service Discovered: " + svc.serviceName());
+    QBluetoothDeviceInfo svcDevice = svc.device();
+    textOutput->append("  -> Device: " + svcDevice.name());
+
+    if (svcDevice.isValid()) {
+        textOutput->append("  -> Device Valid: True");
+    } else {
+        textOutput->append("  -> Device Valid: FALSE!");
+    }
+
+    textOutput->append("Service Valid: " + (svc.isComplete()) ? "True" : "False");
 }
 
 void QTBT::getServicesFromDevice(QBluetoothAddress addr) {
@@ -142,6 +184,6 @@ void QTBT::getServicesFromDevice(QBluetoothAddress addr) {
     connect(serviceAgent, SIGNAL(finished()),
             this, SLOT(serviceDiscoveryFinished()));
     connect(serviceAgent, SIGNAL(serviceDiscovered(const QBluetoothServiceInfo &)),
-            this, SLOT(serviceDiscovered()));
+            this, SLOT(serviceDiscovered(const QBluetoothServiceInfo)));
     serviceAgent->start();
 }
