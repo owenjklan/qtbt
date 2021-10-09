@@ -12,7 +12,9 @@
 #include <QtWidgets>
 #include <QBluetoothLocalDevice>
 #include <QBluetoothDeviceDiscoveryAgent>
+#include <QBluetoothServiceDiscoveryAgent>
 #include <QBluetoothDeviceInfo>
+#include <QBluetoothServiceInfo>
 
 // This is the declaration of our MainWidget class
 // The definition/implementation is in qis_widget.cpp
@@ -23,18 +25,29 @@ Q_OBJECT
 public:
     explicit QTBT(QWidget *parent = 0); //Constructor
     ~QTBT(); // Destructor
+    void getServicesFromDevice(QBluetoothAddress addr);
 
 private slots:
+    void setupUiAndSignals(QWidget *parent);
     void onScanButtonReleased();
-//    void onClearButtonReleased();
+    void onAbortButtonReleased();
+    void onDeviceListDoubleClick(QListWidgetItem *);
     void scanFinished();
+    void serviceDiscoveryFinished();
+    void serviceDiscovered(const QBluetoothServiceInfo svc);
 
 private:
     QBluetoothDeviceDiscoveryAgent *discoveryAgent;
+    QBluetoothServiceDiscoveryAgent *serviceAgent;
     QPushButton *scanButton;
     QPushButton *clearButton;
+    QPushButton *abortButton;
     QLineEdit *domainInput;
     QTextBrowser *textOutput;
+    QListWidget *devicesListWidget;
+
+    QLabel *listLabel;
+    QLabel *messagesLabel;
 };
 
 #endif //QTBT_QTBT_HPP
